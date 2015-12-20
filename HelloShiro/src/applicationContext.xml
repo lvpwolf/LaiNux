@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd">
+	
+	<context:component-scan base-package="com.heisenberg.shiro">
+		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+		<context:exclude-filter type="annotation" expression="org.springframework.web.bind.annotation.ControllerAdvice"/>
+	</context:component-scan>
+	
+	
+	 <bean id="cacheManager" class="org.apache.shiro.cache.ehcache.EhCacheManager">
+        <!-- If you don't have a pre-built net.sf.ehcache.CacheManager instance to inject, but you want
+             a specific Ehcache configuration to be used, specify that here.  If you don't, a default
+             will be used.: -->
+        <property name="cacheManagerConfigFile" value="classpath:ehcache-shiro.xml"/>
+    </bean>
+	
+	<!-- 配置 SecurityManager -->
+	<bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+        <property name="cacheManager" ref="cacheManager"/>
+        <property name="realm" ref="myRealm"/>
+    </bean>
+	
+	<!-- 配置  LifecycleBeanPostProcessor. 可以自动的调用 Shiro 对象中的 init-method 和 destroy-method -->
+    <bean id="lifecycleBeanPostProcessor" 
+    	class="org.apache.shiro.spring.LifecycleBeanPostProcessor"/>
+
+    <!-- 可以使 Shiro 的注解起作用. 前提是必须先配置 LifecycleBeanPostProcessor -->
+    <bean class="org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator"
+          depends-on="lifecycleBeanPostProcessor"/>
+    <bean class="org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor">
+        <property name="securityManager" ref="securityManager"/>
+    </bean>
+	
+    <bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+       <property name="securityManager" ref="securityManager"/>
+       <property name="loginUrl" value="/login.jsp"/>
+       <property name="successUrl" value="/success.jsp"/>
+       <property name="unauthorizedUrl" value="/unauthorized.jsp"/>
+       <!-- The 'filters' property is not necessary since any declared javax.servlet.Filter bean
+            defined will be automatically acquired and available via its beanName in chain
+            definitions, but you can perform overrides or parent/child consolidated configuration
+            here if you like: -->
+       <!-- <property name="filters">
+           <util:map>
+               <entry key="aName" value-ref="someFilterPojo"/>
+           </util:map>
+       </property> -->
+       <property name="filterChainDefinitions">
+           <value>
+               /login.jsp = anon
+               /success.jsp = anon
+               /shiro.css = anon
+               /unauthorized.jsp = anon
+            <!--    /** = authc -->
+           </value>
+       </property>
+   </bean>
+</beans>
